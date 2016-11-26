@@ -38,8 +38,8 @@ public class BackupController {
 
             process.waitFor();
 
-            File outZip = zipBackupFiles(tempBackupFolder);
-            returnBackupFileToUser(response, outZip);
+            File zipFile = zipBackupFiles(tempBackupFolder);
+            streamZipFileToUser(response, zipFile);
         } catch (IOException | InterruptedException e) {
             // TODO: Handle errors a bit better?
             e.printStackTrace();
@@ -47,30 +47,35 @@ public class BackupController {
         }
     }
 
-    private File zipBackupFiles(Path tempFolder) throws IOException {
-        File outZip = new File(tempFolder.toAbsolutePath().toString(), "out.zip");
-        FileOutputStream fout = new FileOutputStream(outZip);
-        ZipOutputStream zout = new ZipOutputStream(fout);
-        for(final File backupFile : tempFolder.toFile().listFiles()) {
-            if (!backupFile.getName().equals("out.zip")) {
-                ZipEntry zipEntry = new ZipEntry(backupFile.getName());
-                zout.putNextEntry(zipEntry);
-                zout.write(Files.readAllBytes(backupFile.toPath()));
-                zout.closeEntry();
+    private File zipBackupFiles(Path tempBackupFolder) throws IOException {
+        File zipFile = new File(tempBackupFolder.toAbsolutePath().toString(), "backupFiles.zip");
+
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile))) {
+            for(final File fileToBackup : tempBackupFolder.toFile().listFiles()) {
+                if (!fileToBackupIsTheZip(fileToBackup, zipFile)) {
+                    ZipEntry zipEntry = new ZipEntry(fileToBackup.getName());
+                    zipOutputStream.putNextEntry(zipEntry);
+                    zipOutputStream.write(Files.readAllBytes(fileToBackup.toPath()));
+                    zipOutputStream.closeEntry();
+                }
             }
         }
-        zout.close();
-        return outZip;
+
+        return zipFile;
+    }
+
+    private boolean fileToBackupIsTheZip(File fileToBackup, File backupFilesZip) {
+        return fileToBackup.getName().equals(backupFilesZip.getName());
     }
 
 
-    private void returnBackupFileToUser(HttpServletResponse response, File outZip) throws IOException {
-        FileInputStream zipFileInputStream = new FileInputStream(outZip);
+    private void streamZipFileToUser(HttpServletResponse response, File zipFile) throws IOException {
+        FileInputStream zipFileInputStream = new FileInputStream(zipFile);
         IOUtils.copy(zipFileInputStream, response.getOutputStream());
         response.flushBuffer();
     }
 
-    private Process runBackupScript(@RequestParam(value = "userId") String userId, Path tempFolder) throws IOException {
+    private Process runBackupScript(String userId, Path tempFolder) throws IOException {
         String[] cmd = {
                 pythonExecutable,
                 scriptLocation,
