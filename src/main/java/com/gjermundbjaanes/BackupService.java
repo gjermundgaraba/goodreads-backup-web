@@ -12,11 +12,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static com.gjermundbjaanes.BackupCleaner.MILISECONDS_TIME_LIMIT_FOR_DOWNLOADS;
+
 @Component
-public class GoodreadsBackup {
+public class BackupService {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -26,8 +29,11 @@ public class GoodreadsBackup {
     @Value("${pythonExecutable}")
     private String pythonExecutable;
 
-    public File performBackup(int userId) throws IOException, InterruptedException {
-        Path tempBackupFolder = Files.createTempDirectory("goodreads-backup-folder");
+    @Value("${workFolder}")
+    private String workFolder;
+
+    public String performBackup(int userId) throws IOException, InterruptedException {
+        Path tempBackupFolder = Files.createTempDirectory("goodreads-temp-");
 
         Process process = runBackupScript(userId, tempBackupFolder);
         InputStream errorStream = process.getErrorStream();
@@ -42,6 +48,24 @@ public class GoodreadsBackup {
         return zipBackupFiles(tempBackupFolder);
     }
 
+    public File findBackupFile(String backupId) {
+        File backupFile = getBackupFile(backupId);
+
+        if (!backupFile.exists()) {
+            throw new RuntimeException("Backup file does not exist");
+        }
+
+        if (System.currentTimeMillis() - backupFile.lastModified() > MILISECONDS_TIME_LIMIT_FOR_DOWNLOADS) {
+            throw new RuntimeException("It is too long since you created the backup. Please create it again");
+        }
+
+        return backupFile;
+    }
+
+    private File getBackupFile(String backupId) {
+        return new File(workFolder, backupId + ".zip");
+    }
+
     private Process runBackupScript(int userId, Path tempFolder) throws IOException {
         String[] cmd = {
                 pythonExecutable,
@@ -53,8 +77,9 @@ public class GoodreadsBackup {
         return Runtime.getRuntime().exec(cmd);
     }
 
-    private File zipBackupFiles(Path tempBackupFolder) throws IOException {
-        File zipFile = new File(tempBackupFolder.toAbsolutePath().toString(), "backupFiles.zip");
+    private String zipBackupFiles(Path tempBackupFolder) throws IOException {
+        String backupId = UUID.randomUUID().toString();
+        File zipFile = getBackupFile(backupId);
 
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile))) {
             for (final File fileToBackup : getListOfFilesInFolder(tempBackupFolder)) {
@@ -67,7 +92,7 @@ public class GoodreadsBackup {
             }
         }
 
-        return zipFile;
+        return backupId;
     }
 
     private File[] getListOfFilesInFolder(Path tempBackupFolder) {

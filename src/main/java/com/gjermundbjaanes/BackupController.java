@@ -4,10 +4,7 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -20,22 +17,34 @@ public class BackupController {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
-    private GoodreadsBackup goodreadsBackup;
+    private BackupService backupService;
 
     @RequestMapping(value = "/backup", method = RequestMethod.GET)
-    public void performBackup(@RequestParam(value = "userId") int userId, HttpServletResponse response) {
+    public String performBackup(@RequestParam(value = "userId") int userId) {
         try {
-            File zipFile = goodreadsBackup.performBackup(userId);
-
-            streamZipFileToUser(response, zipFile);
+            return backupService.performBackup(userId);
         } catch (IOException | InterruptedException e) {
             logger.error("Unexpected error occurred", e);
             throw new RuntimeException(e);
         }
     }
 
-    private void streamZipFileToUser(HttpServletResponse response, File zipFile) throws IOException {
-        FileInputStream zipFileInputStream = new FileInputStream(zipFile);
+    @RequestMapping(value = "/backup/{backupId}")
+    public void downloadBackup(@PathVariable String backupId, HttpServletResponse response) {
+        // TODO: Perform some sanity checks on the backupId, don't want injections and stuff here
+        File backupFile = backupService.findBackupFile(backupId);
+
+        try {
+            response.setHeader("Content-Disposition", "attachment; filename=\"goodreads_backup.zip\"");
+
+            streamFileToUser(response, backupFile);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to download file", e);
+        }
+    }
+
+    private void streamFileToUser(HttpServletResponse response, File file) throws IOException {
+        FileInputStream zipFileInputStream = new FileInputStream(file);
         IOUtils.copy(zipFileInputStream, response.getOutputStream());
         response.flushBuffer();
     }
