@@ -1,4 +1,4 @@
-package com.gjermundbjaanes;
+package com.gjermundbjaanes.backup;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -19,6 +19,9 @@ public class BackupController {
     @Autowired
     private BackupService backupService;
 
+    @Autowired
+    private BackupFileService backupFileService;
+
     @RequestMapping(value = "/backup", method = RequestMethod.GET)
     public String performBackup(@RequestParam(value = "userId") int userId) {
         try {
@@ -32,13 +35,15 @@ public class BackupController {
     @RequestMapping(value = "/backup/{backupId}/download")
     public void downloadBackup(@PathVariable String backupId, HttpServletResponse response) {
         // TODO: Perform some sanity checks on the backupId, don't want injections and stuff here
-        File backupFile = backupService.findBackupFile(backupId);
+        File backupFile = backupFileService.findBackupFile(backupId);
 
+        backupFileService.createLockFileForBackupFile(backupFile);
         try {
             response.setHeader("Content-Type", "application/zip");
             response.setHeader("Content-Disposition", "attachment; filename=\"goodreads_backup.zip\"");
 
             streamFileToUser(response, backupFile);
+            backupFileService.deleteLockFileForBackupFile(backupFile);
         } catch (IOException e) {
             throw new RuntimeException("Failed to download file", e);
         }
