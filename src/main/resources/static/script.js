@@ -7,14 +7,18 @@
 
     function performBackup() {
         var userId = userIdField.val();
-        // TODO: Handle when no userId is added
-
-        $.blockUI({
-            message: '<h1>Getting your backup file ready for download. This can take a few minutes.</h1>'
-        });
-        var backupUrl = window.location +  '/backup?userId=' + userId;
-        $.get(backupUrl, makeDownloadButtonAvailable);
-        // TODO: Handle error from get
+        if (!userId) {
+            createErrorToast('You need to provide a user id');
+        } else if (!isNumeric(userId)) {
+            createErrorToast('User id needs to be a number');
+        } else {
+            $.blockUI({
+                message: '<h1>Getting your backup file ready for download. This can take a few minutes.</h1>'
+            });
+            var backupUrl = window.location +  '/backup?userId=' + userId;
+            $.get(backupUrl, makeDownloadButtonAvailable)
+                .fail(handleAjaxError);
+        }
     }
 
     function makeDownloadButtonAvailable(backupId) {
@@ -33,6 +37,29 @@
             userIdField.hide();
             downloadButton.show();
         }
+    }
+
+    function handleAjaxError(error) {
+        var errorMessage = "Something went wrong!";
+        if (error && error.responseJSON && error.responseJSON.message) {
+            errorMessage = error.responseJSON.message;
+        }
+        createErrorToast(errorMessage, 'Backup Failed');
+    }
+
+    function isNumeric(num){
+        return !isNaN(num)
+    }
+
+    function createErrorToast(errorMessage, errorHeading) {
+        var heading = errorHeading ? errorHeading : 'Error';
+        $.toast({
+            heading: heading,
+            text: errorMessage,
+            position: 'mid-center',
+            hideAfter: false,
+            icon: 'error'
+        })
     }
 
 })();
