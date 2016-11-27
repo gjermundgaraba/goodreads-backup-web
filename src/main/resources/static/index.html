@@ -2,9 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Goodreads Backup Web</title>
+    <link rel="stylesheet" href="main.css" type="text/css">
 </head>
 <body>
-TODO, CREATE NICE LITTLE WEB PAGE TO USE REST API
+<div class="interface-container">
+    <input id="user-id" type="text" placeholder="Goodreads User ID">
+    <button id="backup-button" type="button">Perform Backup</button>
+    <button id="download-button" style="display: none" type="button">Download Backup File</button>
+</div>
+
+<script src="lib/jquery-3.1.1.min.js"></script>
+<script src="lib/jquery.blockUI.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

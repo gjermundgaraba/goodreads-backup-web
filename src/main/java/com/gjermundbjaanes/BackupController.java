@@ -29,12 +29,13 @@ public class BackupController {
         }
     }
 
-    @RequestMapping(value = "/backup/{backupId}")
+    @RequestMapping(value = "/backup/{backupId}/download")
     public void downloadBackup(@PathVariable String backupId, HttpServletResponse response) {
         // TODO: Perform some sanity checks on the backupId, don't want injections and stuff here
         File backupFile = backupService.findBackupFile(backupId);
 
         try {
+            response.setHeader("Content-Type", "application/zip");
             response.setHeader("Content-Disposition", "attachment; filename=\"goodreads_backup.zip\"");
 
             streamFileToUser(response, backupFile);
