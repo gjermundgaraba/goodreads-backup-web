@@ -67,3 +67,25 @@ button:hover {
     width: inherit !important;
     color: #555 !important;
 }
+
+div.dialog > div:first-child {
+    background-color: #eee;
+    border-radius: 0.5em;
+    font-family: Arial, sans-serif;
+    letter-spacing: 1px;
+    font-size: 1.2em;
+    color: #444;
+}
+
+div.dialog p.msg {
+    text-align: center !important;
+}
+
+div.dialog  nav {
+    padding-top: 10px;
+    text-align: center !important;
+}
+
+div.dialog button.ok {
+    border-radius: 0.4em !important;
+}

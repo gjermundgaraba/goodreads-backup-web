@@ -53,13 +53,7 @@
 
     function createErrorToast(errorMessage, errorHeading) {
         var heading = errorHeading ? errorHeading : 'Error';
-        $.toast({
-            heading: heading,
-            text: errorMessage,
-            position: 'mid-center',
-            hideAfter: false,
-            icon: 'error'
-        })
+        alertify.alert(errorMessage);
     }
 
 })();
