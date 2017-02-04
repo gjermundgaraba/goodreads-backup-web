@@ -50,8 +50,9 @@ public class BackupController {
     }
 
     private void streamFileToUser(HttpServletResponse response, File file) throws IOException {
-        FileInputStream zipFileInputStream = new FileInputStream(file);
-        IOUtils.copy(zipFileInputStream, response.getOutputStream());
-        response.flushBuffer();
+        try (FileInputStream zipFileInputStream = new FileInputStream(file)) {
+            IOUtils.copy(zipFileInputStream, response.getOutputStream());
+            response.flushBuffer();
+        }
     }
 }
