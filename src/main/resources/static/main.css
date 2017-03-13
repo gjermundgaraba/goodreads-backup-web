@@ -18,6 +18,7 @@ body{
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    text-align: center;
 }
 
 input[type="text"]{
@@ -88,4 +89,12 @@ div.dialog  nav {
 
 div.dialog button.ok {
     border-radius: 0.4em !important;
+}
+
+@media (max-width: 1100px) {
+    #backup-button {
+        margin-top: 0 !important;
+    }
+
+
 }
